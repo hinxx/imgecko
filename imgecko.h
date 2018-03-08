@@ -56,10 +56,16 @@ enum WiiHookType {
 };
 
 
-bool Connect();
-void Disconnect();
-bool InitGecko();
+bool GeckoIsConnected();
+bool GeckoConnect();
+void GeckoDisconnect();
+bool GeckoReset();
 WiiStatus GeckoStatus();
+FTDICommand GeckoSendRawCommand(const uint8_t id);
+void GeckoSendFail();
+void GeckoSendRetry();
+void GeckoSendAck();
+bool GeckoDump(uint32_t startdump, uint32_t enddump, uint8_t *bytes);
 
 FTDICommand GeckoWrite(uint8_t *sendbyte, uint32_t nobytes);
 FTDICommand GeckoRead(uint8_t *recbyte, uint32_t nobytes);

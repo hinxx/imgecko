@@ -16,218 +16,217 @@
 #include <ftd2xx.h>
 #include "imgecko.h"
 
-//#define BUF_SIZE 0x10
+static bool Connecting;
+//static bool SteppingOut;
+//static bool SteppingUntil;
+//static bool SearchingDisassembly;
 
-//#define MAX_DEVICES		5
+bool Connect()
+{
+	if (Connecting)
+	{
+		Connecting = false;
+//		CUSBGecko.Text = "Connect to Gecko";
+		return false;
+	}
 
-
+	bool retry = true;
+	bool success = false;
+	int attempt = 0;
 //
-//static void dumpBuffer(unsigned char *buffer, int elements)
-//{
-//	int j;
-//
-//	printf(" [");
-//	for (j = 0; j < elements; j++)
+//	if (GeckoIsConnected())
 //	{
-//		if (j > 0)
-//			printf(", ");
-//		printf("0x%02X", (unsigned int)buffer[j]);
+////		StatusCap.Text = "Disconnecting!";
+////		try {gecko.Disconnect();}
+////		catch {}
+////		Application.DoEvents();
+////		System.Threading.Thread.Sleep(500);
+//		printf("%s: disconnecting\n", __func__);
+//		GeckoDisconnect();
+//		sleep(1);
 //	}
-//	printf("]\n");
-//}
+
+	while (retry && !success)
+	{
+		attempt++;
+//		StatusCap.Text = "Connection attempt: " + attempt.ToString();
+		printf("%s: connection attempt %d\n", __func__, attempt);
+//		Application.DoEvents();
+//		try
+//		{
+//			if (!gecko.Connect())
+//			throw new Exception();
+		if (! GeckoConnect()) {
+			return false;
+		}
+		int failAttempt = 0;
+		Connecting = true;
+//			CUSBGecko.Text = "Cancel Connection";
+		while (GeckoStatus() == WiiStatusUnknown)
+		{
+//				gecko.sendfail();
+			GeckoSendFail();
+			failAttempt++;
+			if (failAttempt > 10 || !Connecting)
+			{
+				if (!Connecting)
+				{
+					retry = false;
+				}
+				Connecting = false;
+//					throw new Exception();
+			}
+//				Application.DoEvents();
+		}
+		Connecting = false;
+
+//			if (gecko.status() == WiiStatus.Loader)
+		if (GeckoStatus() == WiiStatusLoader)
+		{
+//				DialogResult dr = MessageBox.Show("No game has been loaded yet!\nGecko dotNET requires a running game!\n\nShould a game be automatically loaded!", "Gecko dotNET", MessageBoxButtons.YesNoCancel, MessageBoxIcon.Warning);
+			printf("%s: No game has been loaded yet!\n", __func__);
+
+//				char ans;
+//				ans = getc(stdin);
+
+//				if (dr == DialogResult.Yes)
+//				gecko.Hook();
+//				if (dr == DialogResult.Cancel)
+//				{
+//					Close();
+//					return;
+//				}
+//				while (gecko.status() == WiiStatus.Loader)
+			while (GeckoStatus() == WiiStatusLoader)
+			{
+//					StatusCap.Text = "Waiting for game!";
+				printf("%s: waiting for game..\n", __func__);
+//					Application.DoEvents();
+//					System.Threading.Thread.Sleep(100);
+				sleep(1);
+			}
+		}
+
+		success = true;
+//		}
+//		catch
+//		{
+//			if (attempt % 3 != 0)
+//			continue;
+//			retry =
+//			MessageBox.Show("Connection to the USB Gecko has failed!\n" +
+//					"Do you want to retry?", "Connection issue",
+//					MessageBoxButtons.YesNo, MessageBoxIcon.Warning) ==
+//			DialogResult.Yes;
+//		}
+	}
+
+//	EnableMainControls(success);
+//	ResSrch.Enabled = false;
+//	RGame.Enabled = success;
+//	PGame.Enabled = success;
+//	OpenNotePad.Enabled = success;
+
+//	try
+//	{
+	if (success)
+	{
+//			CUSBGecko.Text = "Reconnect to Gecko";
+//			StatusCap.Text = "Ready!";
+		printf("%s: READY!\n", __func__);
+
+		// 6 bytes for Game ID + 1 for null + 1 for Version
+		// Apparently, some WiiWare/VC stuff only has 4 bytes for Game ID, but still 1 null + 1 Version too
+		const int bytesToRead = 8;
+//			MemoryStream ms = new MemoryStream();
+//			gecko.Dump(0x80001800, 0x80001800 + bytesToRead, ms);
+		uint8_t buffer[16];
+		GeckoDump(0x80001800, 0x80001800 + bytesToRead, buffer);
+
+
+//
+//			String name = "";
+//			Byte[] buffer = new Byte[bytesToRead];
+//			ms.Seek(0, SeekOrigin.Begin);
+//			ms.Read(buffer, 0, bytesToRead);
+//			name = Encoding.ASCII.GetString(buffer);
+//			String rname = "";
+//			// Don't read version digit into name
+//			int i;// Declare out of for loop scope so we can test the index later
+//			// Go to bytesToRead - 2
+//			// Should end at 4 for VC games and 6 for Wii games
+//			for (i = 0; i < bytesToRead - 2; i++)
+//			if (name[i] != (char)0)
+//			rname += name[i];
+//			else
+//			break;
+//
+//			// first time loading a game, or game changed; reload GCT files
+//			bool gamenameChanged = gamename != rname;
+//			gamename = rname;
+//
+//			int gameVer = ((int)(name[i + 1])) + 1;
+//
+//			this.Text = "Gecko dotNET (" + gamename;
+//			if (gameVer != 1)
+//			{
+//				this.Text += " version " + (gameVer).ToString();
+//			}
+//			this.Text += ")";
+//
+//			if (gamenameChanged)
+//			{
+//				GCTLoadCodes();
+//			}
+//
+//			GameNameStored = false;
+//			DisconnectButton.Enabled = true;
+
+		return true;
+	}
+	else
+	{
+//			DisconnectButton.Enabled = false;
+//			CUSBGecko.Text = "Connect to Gecko";
+//			StatusCap.Text = "No USB Gecko connection availible!";
+//
+//			this.Text = "Gecko dotNET";
+		printf("%s: no connection to USB Gecko!\n", __func__);
+		return false;
+	}
+//	}
+//	catch (EUSBGeckoException exc)
+//	{
+//		exceptionHandling.HandleException(exc);
+//	}
+}
 
 int main()
 {
+//	GeckoConnect();
+//	sleep(0.1);
+//
+//	while (1) {
+//
+//		//Initialize USB Gecko
+//		bool ret = GeckoReset();
+//		if (ret) {
+//			// raw 1
+////			uint8_t cmd_status = 0x50;
+////			GeckoWrite(&cmd_status, 1);
+////			uint8_t status = -1;
+////			GeckoRead(&status, 1);
+//
+//			// WiiStatus GeckoStatus()
+//			WiiStatus status = GeckoStatus();
+//			printf("status = %x\n", status);
+//		}
+//
+//		sleep(2);
+//	}
+//
+//	GeckoDisconnect();
+//
 	Connect();
-	sleep(0.1);
-	uint8_t cmd_status = 0x50;
-//	char cmd_version = 0x99;
 
-	while (1) {
-
-		//Initialize USB Gecko
-		bool ret = InitGecko();
-
-		// raw 1
-//		GeckoWrite(&cmd_status, 1);
-//		uint8_t status = -1;
-//		GeckoRead(&status, 1);
-
-		// WiiStatus GeckoStatus()
-		WiiStatus status = GeckoStatus();
-		printf("status = %x\n", status);
-
-		sleep(2);
-	}
-
-	Disconnect();
 }
-//
-//int main1()
-//{
-//	unsigned char 	cBufWrite[BUF_SIZE];
-//	unsigned char * pcBufRead = NULL;
-//	char * 	pcBufLD[MAX_DEVICES + 1];
-//	char 	cBufLD[MAX_DEVICES][64];
-//	DWORD	dwRxSize = 0;
-//	DWORD 	dwBytesWritten, dwBytesRead;
-//	FT_STATUS	ftStatus;
-//	FT_HANDLE	ftHandle[MAX_DEVICES];
-//	int	iNumDevs = 0;
-//	int	i, j;
-//	int	iDevicesOpen = 0;
-//    int queueChecks = 0;
-//    long int timeout = 5; // seconds
-//    struct timeval  startTime;
-//
-//	for(i = 0; i < MAX_DEVICES; i++) {
-//		pcBufLD[i] = cBufLD[i];
-//	}
-//	pcBufLD[MAX_DEVICES] = NULL;
-//
-//	ftStatus = FT_ListDevices(pcBufLD, &iNumDevs, FT_LIST_ALL | FT_OPEN_BY_SERIAL_NUMBER);
-//
-//	if(ftStatus != FT_OK) {
-//		printf("Error: FT_ListDevices(%d)\n", (int)ftStatus);
-//		return 1;
-//	}
-//
-//	for(i = 0; ( (i <MAX_DEVICES) && (i < iNumDevs) ); i++) {
-//		printf("Device %d Serial Number - %s\n", i, cBufLD[i]);
-//	}
-///*
-//	for(j = 0; j < BUF_SIZE; j++) {
-//		cBufWrite[j] = j;
-//	}
-//*/
-//	cBufWrite[0] = 0x06;
-//
-//	for(i = 0; ( (i <MAX_DEVICES) && (i < iNumDevs) ) ; i++) {
-//		/* Setup */
-//		if((ftStatus = FT_OpenEx(cBufLD[i], FT_OPEN_BY_SERIAL_NUMBER, &ftHandle[i])) != FT_OK){
-//			/*
-//				This can fail if the ftdi_sio driver is loaded
-//		 		use lsmod to check this and rmmod ftdi_sio to remove
-//				also rmmod usbserial
-//		 	*/
-//			printf("Error FT_OpenEx(%d), device %d\n", (int)ftStatus, i);
-//			printf("Use lsmod to check if ftdi_sio (and usbserial) are present.\n");
-//			printf("If so, unload them using rmmod, as they conflict with ftd2xx.\n");
-//			return 1;
-//		}
-//
-//		printf("Opened device %s\n", cBufLD[i]);
-//
-//		iDevicesOpen++;
-///*
-//		if((ftStatus = FT_SetBaudRate(ftHandle[i], 9600)) != FT_OK) {
-//			printf("Error FT_SetBaudRate(%d), cBufLD[i] = %s\n", (int)ftStatus, cBufLD[i]);
-//			break;
-//		}
-//*/
-//		printf("Calling FT_Write with this write-buffer:\n");
-////		dumpBuffer(cBufWrite, BUF_SIZE);
-//		dumpBuffer(cBufWrite, 1);
-//
-//		/* Write */
-////		ftStatus = FT_Write(ftHandle[i], cBufWrite, BUF_SIZE, &dwBytesWritten);
-//    	ftStatus = FT_Write(ftHandle[i], cBufWrite, 1, &dwBytesWritten);
-//		if (ftStatus != FT_OK) {
-//			printf("Error FT_Write(%d)\n", (int)ftStatus);
-//			break;
-//		}
-////		if (dwBytesWritten != (DWORD)BUF_SIZE) {
-//		if (dwBytesWritten != (DWORD)1) {
-//			printf("FT_Write only wrote %d (of %d) bytes\n",
-//			       (int)dwBytesWritten,
-//			       BUF_SIZE);
-//			break;
-//		}
-//
-//#if 0
-//		sleep(1);
-//
-//		/* Read */
-//		dwRxSize = 0;
-//
-//        gettimeofday(&startTime, NULL);
-//
-//        for (queueChecks = 0;
-//             dwRxSize < dwBytesWritten;
-//             queueChecks++)
-//        {
-//            // Periodically check for time-out
-//            if (queueChecks % 128 == 0)
-//            {
-//                struct timeval now;
-//                struct timeval elapsed;
-//
-//                gettimeofday(&now, NULL);
-//                timersub(&now, &startTime, &elapsed);
-//
-//                if (elapsed.tv_sec > timeout)
-//                {
-//                    // We've waited too long.  Give up.
-//                    printf("\nTimed out after %ld seconds\n", elapsed.tv_sec);
-//                    break;
-//                }
-//
-//                // Display number of bytes D2XX has received
-//                printf("%s%d",
-//                       queueChecks == 0 ? "Number of bytes in D2XX receive-queue: " : ", ",
-//                       (int)dwRxSize);
-//            }
-//
-//            ftStatus = FT_GetQueueStatus(ftHandle, &dwRxSize);
-//            if (ftStatus != FT_OK)
-//            {
-//                printf("\nFT_GetQueueStatus failed (%d).\n",
-//                       (int)ftStatus);
-//            }
-//        }
-//
-//        printf("\nGot %d (of %d) bytes.\n", (int)dwRxSize, (int)dwBytesWritten);
-//
-//		if(ftStatus == FT_OK) {
-//			pcBufRead = realloc(pcBufRead, dwRxSize);
-//			memset(pcBufRead, 0xFF, dwRxSize);
-//			printf("Calling FT_Read with this read-buffer:\n");
-//			dumpBuffer(pcBufRead, dwRxSize);
-//			ftStatus = FT_Read(ftHandle[i], pcBufRead, dwRxSize, &dwBytesRead);
-//			if (ftStatus != FT_OK) {
-//				printf("Error FT_Read(%d)\n", (int)ftStatus);
-//				break;
-//			}
-//			if (dwBytesRead != dwRxSize) {
-//				printf("FT_Read only read %d (of %d) bytes\n",
-//				       (int)dwBytesRead,
-//				       (int)dwRxSize);
-//				break;
-//			}
-//			printf("FT_Read read %d bytes.  Read-buffer is now:\n",
-//			       (int)dwBytesRead);
-//			dumpBuffer(pcBufRead, (int)dwBytesRead);
-//			if (0 != memcmp(cBufWrite, pcBufRead, BUF_SIZE)) {
-//				printf("Error: read-buffer does not match write-buffer.\n");
-//				break;
-//			}
-//			printf("%s test passed.\n", cBufLD[i]);
-//		}
-//		else {
-//			printf("Error FT_GetQueueStatus(%d)\n", (int)ftStatus);
-//		}
-//#endif
-//
-//	}
-//
-//	iDevicesOpen = i;
-//	/* Cleanup */
-//	for(i = 0; i < iDevicesOpen; i++) {
-//		FT_Close(ftHandle[i]);
-//		printf("Closed device %s\n", cBufLD[i]);
-//	}
-//
-//	if(pcBufRead)
-//		free(pcBufRead);
-//	return 0;
-//}

@@ -24,10 +24,10 @@ DYNAMIC_APP = $(APP)-dynamic
 all: $(APP)-static
 
 imgecko.o: imgecko.cpp
-	g++ -c $< -o $@ ./libftd2xx/build/libftd2xx.a $(CFLAGS) $(DEPENDENCIES)
+	g++ -c $< -o $@ $(CFLAGS) $(DEPENDENCIES)
 
 main.o: main.cpp
-	g++ -c $< -o $@ ./libftd2xx/build/libftd2xx.a $(CFLAGS) $(DEPENDENCIES)
+	g++ -c $< -o $@ $(CFLAGS) $(DEPENDENCIES)
 
 $(STATIC_APP): imgecko.o main.o
 	g++ imgecko.o main.o -o $(STATIC_APP) ./libftd2xx/build/libftd2xx.a $(CFLAGS) $(DEPENDENCIES)

@@ -1,0 +1,48 @@
+Connect: connection attempt 1
+GeckoWrite():
+  0000  50                                               P
+GeckoWrite() FTstatus 0
+GeckoWrite(): wrote 1/1
+GeckoRead() FTstatus 0
+GeckoRead(): read 1/1
+GeckoRead():
+  0000  00                                               .
+GeckoStatus: status = 0
+GeckoWrite():
+  0000  50                                               P
+GeckoWrite() FTstatus 0
+GeckoWrite(): wrote 1/1
+GeckoRead() FTstatus 0
+GeckoRead(): read 1/1
+GeckoRead():
+  0000  00                                               .
+GeckoStatus: status = 0
+Connect: READY!
+GeckoDump: start 80001800, end 80001808, length 00000008
+GeckoMemRange:
+  0000  80 00 18 00 80 00 18 08                          ........
+GeckoDump: sending READ MEM command..
+GeckoWrite():
+  0000  04                                               .
+GeckoWrite() FTstatus 0
+GeckoWrite(): wrote 1/1
+GeckoDump: waiting for ACK!
+GeckoRead() FTstatus 0
+GeckoRead(): read 1/1
+GeckoRead():
+  0000  aa                                               .
+GeckoDump: got ACK!
+GeckoWrite():
+  0000  80 00 18 00 80 00 18 08                          ........
+GeckoWrite() FTstatus 0
+GeckoWrite(): wrote 8/8
+GeckoDump: getting last chunck
+GeckoRead() FTstatus 0
+GeckoRead(): read 8/8
+GeckoRead():
+  0000  4a 41 41 50 00 00 00 00                          JAAP....
+GeckoWrite():
+  0000  aa                                               .
+GeckoWrite() FTstatus 0
+GeckoWrite(): wrote 1/1
+GeckoDump: success!
