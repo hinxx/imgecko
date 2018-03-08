@@ -494,13 +494,13 @@ bool GeckoDump(uint32_t startdump, uint32_t enddump, uint8_t *bytes)
 
 	//How many chunks do I need to split this data into
 	//How big ist the last chunk
-	uint32_t fullchunks = memlength / packetsize;
-	uint32_t lastchunk = memlength % packetsize;
+//	uint32_t fullchunks = memlength / packetsize;
+//	uint32_t lastchunk = memlength % packetsize;
 
 	//How many chunks do I need to transfer
-	uint32_t allchunks = fullchunks;
-	if (lastchunk > 0)
-		allchunks++;
+//	uint32_t allchunks = fullchunks;
+//	if (lastchunk > 0)
+//		allchunks++;
 
 //	uint64_t GeckoMemRange = ByteSwap.Swap(
 //			(uint64_t)(((uint64_t) startdump << 32) + ((uint64_t) enddump)));
@@ -550,25 +550,34 @@ bool GeckoDump(uint32_t startdump, uint32_t enddump, uint8_t *bytes)
 	}
 
 	//We start with chunk 0
-	uint32_t chunk = 0;
+//	uint32_t chunk = 0;
 	retry = 0;
-	uint32_t buffer_idx = 0;
+//	uint32_t buffer_idx = 0;
 
 	// Reset cancel flag
-	bool done = false;
+//	bool done = false;
 //	CancelDump = false;
+
+	uint32_t len = packetsize;
+	uint32_t count = 0;
 
 //	Byte[] buffer = new Byte[packetsize]; //read buffer
 	uint8_t buffer[packetsize];
-	while (chunk < fullchunks && !done)
+//	while (chunk < fullchunks && !done)
+	while (count < memlength)
 	{
-		printf("%s: getting full chunck %d/%d\n", __func__,chunk, fullchunks);
+		len = packetsize;
+		if ((memlength - count) < len) {
+			len = memlength - count;
+		}
+		printf("%s: getting chunck of %d bytes\n", __func__, len);
 
 		//No output yet availible
 //		SendUpdate(chunk, allchunks, chunk * packetsize, memlength, retry == 0,
 //				true);
 		//Set buffer
-		FTDICommand returnvalue = GeckoRead(buffer, packetsize);
+//		FTDICommand returnvalue = GeckoRead(buffer, packetsize);
+		FTDICommand returnvalue = GeckoRead(buffer, len);
 		if (returnvalue == CMD_ResultError) {
 			retry++;
 			if (retry >= 3) {
@@ -598,15 +607,18 @@ bool GeckoDump(uint32_t startdump, uint32_t enddump, uint8_t *bytes)
 //		}
 //		_hexdump("Full chunk", (char *)buffer, packetsize);
 
-		assert(buffer_idx < memlength);
-		memcpy(bytes + buffer_idx, buffer, packetsize);
-		buffer_idx += (chunk * packetsize);
-		assert(buffer_idx < memlength);
+		assert(count <= memlength);
+//		memcpy(bytes + buffer_idx, buffer, packetsize);
+//		buffer_idx += (chunk * packetsize);
+		memcpy(bytes + count, buffer, len);
+//		buffer_idx += (chunk * len);
+		count += len;
+		assert(count <= memlength);
 
 		//reset retry counter
 		retry = 0;
 		//next chunk
-		chunk++;
+//		chunk++;
 
 //		if (!CancelDump) {
 //			//ackowledge package
@@ -621,6 +633,7 @@ bool GeckoDump(uint32_t startdump, uint32_t enddump, uint8_t *bytes)
 		GeckoSendAck();
 	}
 
+#if 0
 	//Final package?
 	while (!done)
 	{
@@ -677,6 +690,7 @@ bool GeckoDump(uint32_t startdump, uint32_t enddump, uint8_t *bytes)
 //		GeckoWrite(BitConverter.GetBytes(GCACK), 1);
 		GeckoSendAck();
 	}
+#endif
 
 //	SendUpdate(allchunks, allchunks, memlength, memlength, true, true);
 //}
