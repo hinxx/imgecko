@@ -69,6 +69,11 @@ bool GeckoDump(uint32_t startdump, uint32_t enddump, uint8_t *bytes);
 
 FTDICommand GeckoWrite(uint8_t *sendbyte, uint32_t nobytes);
 FTDICommand GeckoRead(uint8_t *recbyte, uint32_t nobytes);
+void GeckoPauseCmd();
+void GeckoSafePauseCmd();
+void GeckoResumeCmd();
+void GeckoSafeResumeCmd();
+
 
 
 #endif /* IMGECKO_H_ */

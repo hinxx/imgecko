@@ -404,6 +404,65 @@ void GeckoSendAck()
 	GeckoSendRawCommand(GCACK);
 }
 
+//Pauses the game
+void GeckoPauseCmd()
+{
+	//Only needs to send a cmd_pause to Wii
+	if (GeckoSendRawCommand(cmd_pause) != CMD_OK) {
+//		throw new EUSBGeckoException(EUSBErrorCode.FTDICommandSendError);
+	}
+}
+
+// Tries to repeatedly pause the game until it succeeds
+void GeckoSafePauseCmd()
+{
+	bool WasRunning = (GeckoStatus() == WiiStatusRunning);
+	while (WasRunning)
+	{
+		GeckoPauseCmd();
+//		System.Threading.Thread.Sleep(100);
+		//wait!!
+		usleep(100000);
+		// Sometimes, the game doesn't actually pause...
+		// So loop repeatedly until it does!
+		WasRunning = (GeckoStatus() == WiiStatusRunning);
+	}
+}
+
+//Unpauses the game
+void GeckoResumeCmd()
+{
+	//Only needs to send a cmd_unfreeze to Wii
+	if (GeckoSendRawCommand(cmd_unfreeze) != CMD_OK)
+	{
+//		throw new EUSBGeckoException(EUSBErrorCode.FTDICommandSendError);
+	}
+}
+
+// Tries repeatedly to resume the game until it succeeds
+void GeckoSafeResumeCmd()
+{
+	bool NotRunning = (GeckoStatus() != WiiStatusRunning);
+	int failCounter = 0;
+	while (NotRunning && failCounter < 10)
+	{
+		GeckoResumeCmd();
+//		System.Threading.Thread.Sleep(100);
+		//wait!
+		usleep(100000);
+		// Sometimes, the game doesn't actually resume...
+		// So loop repeatedly until it does!
+//		try
+//		{
+			NotRunning = (GeckoStatus() != WiiStatusRunning);
+//		}
+//		catch (FTDIUSBGecko.EUSBGeckoException ex)
+//		{
+			NotRunning = true;
+			failCounter++;
+//		}
+	}
+}
 
 // XXX: not needed ATM!
 ////Send update on a running process to the parent class

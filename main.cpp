@@ -235,16 +235,28 @@ int main()
 	/* here, do your time-consuming job */
 
 	if (ret) {
-		uint8_t buffer[0x100000];
-		uint32_t bytesToRead = 0x10000;
+//		uint8_t buffer[0x100000];
+//		uint32_t bytesToRead = 0x10000;
+//
+//		clock_t begin = clock();
+//
+//		ret = GeckoDump(0x80000000, 0x80000000 + bytesToRead, buffer);
+//
+//		clock_t end = clock();
+//		double time_spent = (double)(end - begin) / CLOCKS_PER_SEC;
+//		printf("%s: time spent for %d bytes: %f\n", __func__, bytesToRead, time_spent);
 
-		clock_t begin = clock();
 
-		ret = GeckoDump(0x80000000, 0x80000000 + bytesToRead, buffer);
+		// pause the game
+//		GeckoReset();
+		printf("Pausing the game for 2 seconds..\n");
+//		GeckoPauseCmd();
+		GeckoSafePauseCmd();
+		sleep(2);
+//		GeckoReset();
+		printf("Resuming the game..\n");
+		GeckoSafeResumeCmd();
 
-		clock_t end = clock();
-		double time_spent = (double)(end - begin) / CLOCKS_PER_SEC;
-		printf("%s: time spent for %d bytes: %f\n", __func__, bytesToRead, time_spent);
 	}
 
 }
