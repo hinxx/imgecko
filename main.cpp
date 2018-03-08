@@ -8,11 +8,12 @@
 	gcc -o simple main.c -L. -lftd2xx -Wl,-rpath /usr/local/lib
 */
 
+#include <sys/time.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-#include <sys/time.h>
+#include <time.h>
 #include <ftd2xx.h>
 #include "imgecko.h"
 
@@ -227,6 +228,23 @@ int main()
 //
 //	GeckoDisconnect();
 //
-	Connect();
+	bool ret = Connect();
+
+	sleep(2);
+
+	/* here, do your time-consuming job */
+
+	if (ret) {
+		uint8_t buffer[0x100000];
+		uint32_t bytesToRead = 0x10000;
+
+		clock_t begin = clock();
+
+		ret = GeckoDump(0x80000000, 0x80000000 + bytesToRead, buffer);
+
+		clock_t end = clock();
+		double time_spent = (double)(end - begin) / CLOCKS_PER_SEC;
+		printf("%s: time spent for %d bytes: %f\n", __func__, bytesToRead, time_spent);
+	}
 
 }
