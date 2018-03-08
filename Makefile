@@ -11,6 +11,7 @@ else
 endif
 
 CFLAGS = -Wall -Wextra
+CFLAGS += -ggdb3 -O0
 CFLAGS += -Ilibftd2xx
 
 DYNAMIC_LINK_OPTIONS := -L ./libftd2xx/build
@@ -19,13 +20,20 @@ APP = simple
 STATIC_APP = $(APP)-static
 DYNAMIC_APP = $(APP)-dynamic
 
-all: $(APP)-static $(APP)-dynamic 
+#all: $(APP)-static $(APP)-dynamic 
+all: $(APP)-static
 
-$(STATIC_APP): main.c	
-	$(CC) main.c -o $(STATIC_APP) ./libftd2xx/build/libftd2xx.a $(CFLAGS) $(DEPENDENCIES)
+imgecko.o: imgecko.cpp
+	g++ -c $< -o $@ ./libftd2xx/build/libftd2xx.a $(CFLAGS) $(DEPENDENCIES)
 
-$(DYNAMIC_APP): main.c	
-	$(CC) main.c -o $(DYNAMIC_APP) $(CFLAGS) -lftd2xx $(DEPENDENCIES) $(DYNAMIC_LINK_OPTIONS)
+main.o: main.cpp
+	g++ -c $< -o $@ ./libftd2xx/build/libftd2xx.a $(CFLAGS) $(DEPENDENCIES)
+
+$(STATIC_APP): imgecko.o main.o
+	g++ imgecko.o main.o -o $(STATIC_APP) ./libftd2xx/build/libftd2xx.a $(CFLAGS) $(DEPENDENCIES)
+
+#$(DYNAMIC_APP): main.c	
+#	$(CC) main.c -o $(DYNAMIC_APP) $(CFLAGS) -lftd2xx $(DEPENDENCIES) $(DYNAMIC_LINK_OPTIONS)
 	
 clean:
-	-rm -f *.o ; rm $(STATIC_APP); rm $(DYNAMIC_APP)
+	-rm -f *.o ; rm -f $(STATIC_APP); rm -f $(DYNAMIC_APP)
