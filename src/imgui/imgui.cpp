@@ -10170,9 +10170,13 @@ bool ImGui::InputTextEx(const char* label, char* buf, int buf_size, const ImVec2
                     event_flag = ImGuiInputTextFlags_CallbackHistory;
                     event_key = ImGuiKey_DownArrow;
                 }
-                else if (flags & ImGuiInputTextFlags_CallbackAlways)
+//                else if (flags & ImGuiInputTextFlags_CallbackAlways)
+//                    event_flag = ImGuiInputTextFlags_CallbackAlways;
+// HK send callback only when enter is pressed!
+                else if ((flags & ImGuiInputTextFlags_CallbackAlways) != 0 && IsKeyPressedMap(ImGuiKey_Enter))
                     event_flag = ImGuiInputTextFlags_CallbackAlways;
-
+                	event_key = ImGuiKey_Enter;
+// HK
                 if (event_flag)
                 {
                     ImGuiTextEditCallbackData callback_data;
