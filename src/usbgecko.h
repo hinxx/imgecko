@@ -66,6 +66,7 @@ void GeckoSendFail();
 void GeckoSendRetry();
 void GeckoSendAck();
 bool GeckoDump(uint32_t startdump, uint32_t enddump, uint8_t *bytes);
+bool GeckoPoke08(uint32_t address, uint8_t value);
 
 FTDICommand GeckoWrite(uint8_t *sendbyte, uint32_t nobytes);
 FTDICommand GeckoRead(uint8_t *recbyte, uint32_t nobytes);

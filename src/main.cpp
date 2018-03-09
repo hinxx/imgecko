@@ -14,12 +14,23 @@
 #include <string.h>
 #include <unistd.h>
 #include <time.h>
+#include <pthread.h>
 
 #include <GL/gl3w.h>    // This example is using gl3w to access OpenGL functions (because it is small). You may use glew/glad/glLoadGen/etc. whatever already works for you.
 #include <GLFW/glfw3.h>
 
 static bool Connecting = false;
+static bool Connected = false;
+static bool doDump = false;
+static bool doExit = false;
 static uint8_t buffer[0x100000];
+static char startBuf[64] = "80351000";
+static char endBuf[64] = "80352000";
+static char countBuf[64] = "1000";
+static uint32_t framerate = 0;
+static uint32_t bufrate = 0;
+static uint32_t startAddr = 0x80000000;
+static uint32_t count = 0;
 
 //////////////////////////////////////////////////////////////////////////////
 
@@ -59,6 +70,7 @@ bool Connect()
 //		{
 //			if (!gecko.Connect())
 //			throw new Exception();
+		Connected = false;
 		if (! GeckoConnect()) {
 			return false;
 		}
@@ -185,6 +197,7 @@ bool Connect()
 //			GameNameStored = false;
 //			DisconnectButton.Enabled = true;
 
+		Connected = true;
 		return true;
 	}
 	else
@@ -204,12 +217,68 @@ bool Connect()
 //	}
 }
 
+void *print_message_function( void *ptr )
+{
+     char *message;
+     message = (char *) ptr;
+     printf("%s \n", message);
+
+     bool ret;
+
+     while (! doExit)
+     {
+    	 if (! Connected)
+    	 {
+    		 ret = Connect();
+    		 sleep(1);
+    	 }
+    	 if (Connected && doDump)
+    	 {
+//     		uint32_t bytesToRead = 0x10000;
+
+     		clock_t begin = clock();
+
+//     		startAddr = strtol(startBuf, NULL, 16);
+////     		uint32_t endAddr = strtol(endBuf, NULL, 16);
+//     		count = strtol(countBuf, NULL, 16);
+     		printf("%s: start address 0x%08X\n", __func__, startAddr);
+     		printf("%s: end address 0x%08X\n", __func__, startAddr+count);
+     		ret = GeckoDump(startAddr, startAddr+count, buffer);
+
+     		clock_t end = clock();
+     		double time_spent = (double)(end - begin) / CLOCKS_PER_SEC;
+     		printf("%s: time spent for %d bytes: %f\n", __func__, count, time_spent);
+
+     		bufrate++;
+     		printf("%s: frame rate %d, buffer rate %d, %f\n", __func__, framerate, bufrate, bufrate/(framerate/60.0));
+
+//     		GeckoPoke08()
+     		//doDump = false;
+    		usleep(50000);
+    	 }
+		usleep(10000);
+     }
+}
+
 //////////////////////////////////////////////////////////////////////////////
 
 
 static void error_callback(int error, const char* description)
 {
     fprintf(stderr, "Error %d: %s\n", error, description);
+}
+//
+//static int TextEditCallback(ImGuiTextEditCallbackData* data)
+//{
+////    UserData* user_data = (UserData*)data->UserData;
+//	printf("%s: called.., data %p\n", __func__, data);
+//}
+
+static void MemEditWriteFn(uint8_t* data, size_t off, uint8_t d)
+{
+	data[off] = (uint8_t)d;
+	printf("%s: called.., data[%X] %X\n", __func__, off, d);
+//	GeckoPoke08();
 }
 
 int main(int, char**)
@@ -224,7 +293,7 @@ int main(int, char**)
 #if __APPLE__
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
 #endif
-    GLFWwindow* window = glfwCreateWindow(1280, 720, "ImGui OpenGL3 example", NULL, NULL);
+    GLFWwindow* window = glfwCreateWindow(800, 720, "ImGui OpenGL3 example", NULL, NULL);
     glfwMakeContextCurrent(window);
     glfwSwapInterval(1); // Enable vsync
     gl3wInit();
@@ -258,6 +327,20 @@ int main(int, char**)
     bool show_demo_window = true;
     bool show_another_window = false;
     ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
+
+
+	pthread_t thread1;
+	const char *message1 = "Thread 1";
+	int  iret1;
+    /* Create independent threads each of which will execute function */
+
+     iret1 = pthread_create( &thread1, NULL, print_message_function, (void*) message1);
+     if(iret1)
+     {
+         fprintf(stderr,"Error - pthread_create() return code: %d\n",iret1);
+         exit(EXIT_FAILURE);
+     }
+     printf("pthread_create() for thread 1 returns: %d\n",iret1);
 
     // Main loop
     while (!glfwWindowShouldClose(window))
@@ -306,30 +389,38 @@ int main(int, char**)
             ImGui::ShowDemoWindow(&show_demo_window);
         }
 
-		static MemoryEditor mem_edit_2;
-		ImGui::Begin("MyWindow");
-		mem_edit_2.DrawContents((unsigned char *)buffer, 0x10000, (size_t)0x80000000);
-		ImGui::End();
-
 		ImGui::Begin("GeckoWindow");
 		//mem_edit_2.DrawContents((unsigned char *)window, 0x1000, 0);
         ImGui::Text("Hello from GECKO window!");
-        if (ImGui::Button("Try Connect")) {
-        	bool ret = Connect();
-        	if (ret) {
-        		uint32_t bytesToRead = 0x10000;
 
-        		clock_t begin = clock();
+        ImGuiInputTextFlags flags = ImGuiInputTextFlags_CharsHexadecimal | ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_AutoSelectAll | ImGuiInputTextFlags_NoHorizontalScroll | ImGuiInputTextFlags_AlwaysInsertMode;
+        ImGui::InputText("Start", startBuf, 9, flags);
+        //ImGui::InputText("End", endBuf, 9, ImGuiInputTextFlags_CharsHexadecimal | ImGuiInputTextFlags_CharsUppercase | ImGuiInputTextFlags_EnterReturnsTrue);
+        ImGui::InputText("Count", countBuf, 9, flags);
 
-        		ret = GeckoDump(0x80000000, 0x80000000 + bytesToRead, buffer);
+ 		startAddr = strtol(startBuf, NULL, 16);
+//     		uint32_t endAddr = strtol(endBuf, NULL, 16);
+ 		count = strtol(countBuf, NULL, 16);
 
-        		clock_t end = clock();
-        		double time_spent = (double)(end - begin) / CLOCKS_PER_SEC;
-        		printf("%s: time spent for %d bytes: %f\n", __func__, bytesToRead, time_spent);
-        	}
+        if (ImGui::Button("Start Dump")) {
+			framerate = 0;
+			bufrate = 0;
+        	doDump = true;
         }
 
+        if (ImGui::Button("Stop Dump")) {
+        	doDump = false;
+        }
+
+		static MemoryEditor mem_edit_2;
+		ImGui::Begin("MyWindow");
+		mem_edit_2.WriteFn = MemEditWriteFn;
+		mem_edit_2.DrawContents((unsigned char *)buffer, 0x10000, (size_t)startAddr);
 		ImGui::End();
+
+		ImGui::End();
+
+		framerate++;
 
         // Rendering
         int display_w, display_h;
@@ -342,7 +433,13 @@ int main(int, char**)
         glfwSwapBuffers(window);
     }
 
-    // Cleanup
+	/* Wait till threads are complete before main continues. Unless we  */
+	/* wait we run the risk of executing an exit which will terminate   */
+	/* the process and all threads before the threads have completed.   */
+    doExit = true;
+	pthread_join( thread1, NULL);
+
+     // Cleanup
     ImGui_ImplGlfwGL3_Shutdown();
     ImGui::DestroyContext();
     glfwTerminate();

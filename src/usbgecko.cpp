@@ -24,6 +24,31 @@ static bool connected = false;
 const uint32_t packetsize = 0xF800;
 const uint32_t uplpacketsize = 0xF80;
 
+/*
+ * From http://wiibrew.org/wiki/USB_Gecko
+
+01 [4 bytes address] [4 bytes data] = Write a byte to memory
+02 [4 bytes address] [4 bytes data] = Write a word (16 bits) to memory
+03 [4 bytes address] [4 bytes data] = Write a double word (32 bits) to memory
+04 [4 bytes high addr] [4 bytes low addr] = Read bytes from memory
+06 = Freeze program
+07 = Unfreeze program
+08 = Resume program, but remain frozen (single frame advance)
+NOTE THIS IS A WORK IN PROGRESS
+09 [data] = Breakpoints (ibp)
+10 [data] = Breakpoints (dbp)
+2f [data] = upbpdata
+30 [data?] = getbpdata
+38 [data] = cancelbreakpoints
+40 [data] = sendcheats
+41 [data] = uploadcode
+44 [data] = breakpoints (step)
+50 [data] = pausestatus
+60 [data] = executecodes
+89 [data] = breakpoints (aligned dbp)
+99 [data] = versionnumber
+
+ */
 const uint8_t      cmd_poke08 = 0x01;
 const uint8_t      cmd_poke16 = 0x02;
 const uint8_t     cmd_pokemem = 0x03;
@@ -317,7 +342,8 @@ FTDICommand GeckoRead(uint8_t *recbyte, uint32_t nobytes)
 	}
 
 	printf("GeckoRead(): read %d/%d\n", bytes_read, nobytes);
-	_hexdump("GeckoRead()", recbyte, bytes_read);
+//	_hexdump("GeckoRead()", recbyte, bytes_read);
+
 	return CMD_OK;
 }
 
@@ -325,7 +351,8 @@ FTDICommand GeckoWrite(uint8_t *sendbyte, uint32_t nobytes)
 {
 	uint32_t bytes_written = 0;
 
-	_hexdump("GeckoWrite()", sendbyte, nobytes);
+//	_hexdump("GeckoWrite()", sendbyte, nobytes);
+
 	FT_STATUS ftStatus = FT_Write(handle, sendbyte, nobytes, &bytes_written);
 	printf("GeckoWrite() FTstatus %d\n", ftStatus);
 	if (ftStatus == FT_OK) {
@@ -696,6 +723,31 @@ bool GeckoDump(uint32_t startdump, uint32_t enddump, uint8_t *bytes)
 //}
 
 	printf("%s: success!\n", __func__);
+
+	return true;
+}
+
+//Poke a 08 bit value - note: address and value must be all in endianness of sending platform
+bool GeckoPoke08(uint32_t address, uint8_t value)
+{
+	//value = send [address in big endian] [value in big endian]
+	uint64_t PokeVal = (((uint64_t)address) << 32) | ((uint64_t)value);
+
+	PokeVal = _swap64(PokeVal);
+
+	//Send poke08
+	if (GeckoSendRawCommand(cmd_poke08) != CMD_OK)
+	{
+//		throw new EUSBGeckoException(EUSBErrorCode.FTDICommandSendError);
+		return false;
+	}
+
+	//write value
+	if (GeckoWrite((uint8_t *)&PokeVal, 8) != CMD_OK)
+	{
+//		throw new EUSBGeckoException(EUSBErrorCode.FTDICommandSendError);
+		return false;
+	}
 
 	return true;
 }
